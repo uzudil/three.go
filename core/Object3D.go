@@ -29,10 +29,12 @@ type Object3D struct {
 	UserData map[string]string
 	ModelViewMatrix *math.Matrix4
 	NormalMatrix *math.Matrix3
+
 	GetWorldQuaternion func(*math.Vector3) (*math.Quaternion)
 	GetWorldRotation func(*math.Euler) (*math.Euler)
 	GetWorldScale func(*math.Vector3) (*math.Vector3)
 	GetWorldDirection func(*math.Vector3) (*math.Vector3)
+	LookAt func(*math.Vector3)
 }
 
 var Object3DIdCount int = 0
@@ -85,6 +87,7 @@ func NewObject3D() (*Object3D) {
 	object3d.GetWorldRotation = object3d.buildGetWorldRotation()
 	object3d.GetWorldScale() = object3d.buildGetWorldScale()
 	object3d.GetWorldDirection = object3d.buildGetWorldDirection()
+	object3d.LookAt = object3d.buildLookAt()
 
 	return &object3d
 }
@@ -299,5 +302,14 @@ func (o *Object3D) buildGetWorldDirection() (func(*math.Vector3) (*math.Vector3)
 		o.GetWorldQuaternion( quaternion )
 
 		return result.Set( 0, 0, 1 ).ApplyQuaternion( quaternion )
+	}
+}
+
+func (o *Object3D) buildLookAt() (func(*math.Vector3)) {
+	// This routine does not support objects with rotated and/or translated parent(s)
+	var m1 = math.NewMatrix4()
+	return func(vector *math.Vector3) {
+		m1.LookAt(vector, o.Position, o.Up)
+		o.Quaternion.SetFromRotationMatrix( m1 )
 	}
 }

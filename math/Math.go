@@ -36,17 +36,11 @@ func GenerateUUID() string {
 	var r int
 
 	for i := 0; i < 36; i ++ {
-
 		if i == 8 || i == 13 || i == 18 || i == 23 {
-
 			uuid[ i ] = "-"
-
 		} else if i == 14 {
-
 			uuid[ i ] = "4"
-
 		} else {
-
 			if rnd <= 0x02 {
 				rnd = 0x2000000 + int(math.Trunc( rand.Float64() * float64(0x1000000) ))
 			}
@@ -61,3 +55,18 @@ func GenerateUUID() string {
 	}
 	return strings.Join(uuid, "")
 }
+
+var DegToRad func(float64) float64 = func() (func(float64) float64) {
+	degreeToRadiansFactor := math.Pi / 180.0
+	return func ( degrees float64) float64 {
+		return degrees * degreeToRadiansFactor
+	}
+}()
+
+var RadToDeg func(float64) float64 = func() (func(float64) float64) {
+	radianToDegreesFactor := 180 / math.Pi
+	return func ( radians float64) float64 {
+		return radians * radianToDegreesFactor
+	}
+}()
+

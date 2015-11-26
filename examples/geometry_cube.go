@@ -1,9 +1,13 @@
 package main
 
-import three "github.com/uzudil/three.go"
+import (
+	three "github.com/uzudil/three.go"
+	"github.com/uzudil/three.go/cameras"
+	"github.com/uzudil/three.go/scenes"
+)
 
-var camera three.Camera
-var scene three.Scene
+var camera cameras.Camera
+var scene scenes.Scene
 var mesh three.Mesh
 var renderer three.Renderer
 
@@ -13,10 +17,10 @@ const (
 )
 
 func main() {
-	camera = three.NewPerspectiveCamera( 70, WIDTH / HEIGHT, 1, 1000 )
+	camera = cameras.NewPerspectiveCamera( 70.0, float64(WIDTH / HEIGHT), 1.0, 1000.0 )
 	camera.Position.Z = 400
 
-	scene = three.NewScene()
+	scene = scenes.NewScene()
 
 	geometry := three.NewBoxGeometry( 200, 200, 200 )
 	material := three.NewMeshBasicMaterial( { map: texture } )

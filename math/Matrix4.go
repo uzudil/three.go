@@ -211,6 +211,27 @@ func (m *Matrix4) MakeRotationFromQuaternion(q *Quaternion) (*Matrix4) {
 	return m
 }
 
+func (m *Matrix4) Set(n11, n12, n13, n14, n21, n22, n23, n24, n31, n32, n33, n34, n41, n42, n43, n44 float64) (*Matrix4) {
+	var te = m.Elements
+
+	te[ 0 ] = n11; te[ 4 ] = n12; te[ 8 ] = n13; te[ 12 ] = n14
+	te[ 1 ] = n21; te[ 5 ] = n22; te[ 9 ] = n23; te[ 13 ] = n24
+	te[ 2 ] = n31; te[ 6 ] = n32; te[ 10 ] = n33; te[ 14 ] = n34
+	te[ 3 ] = n41; te[ 7 ] = n42; te[ 11 ] = n43; te[ 15 ] = n44
+
+	return m
+}
+
+func (m *Matrix4) Identity() {
+	m.Set(
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1,
+	)
+	return m
+}
+
 func (m *Matrix4) Clone() (*Matrix4) {
 	return NewMatrix4().FromArray( m.Elements )
 }
@@ -261,6 +282,16 @@ func (m *Matrix4) Scale(v *Vector3) (*Matrix4) {
 	return m
 }
 
+func (m *Matrix4) GetMaxScaleOnAxis() float64 {
+	var te = m.Elements
+
+	scaleXSq := te[ 0 ] * te[ 0 ] + te[ 1 ] * te[ 1 ] + te[ 2 ] * te[ 2 ]
+	scaleYSq := te[ 4 ] * te[ 4 ] + te[ 5 ] * te[ 5 ] + te[ 6 ] * te[ 6 ]
+	scaleZSq := te[ 8 ] * te[ 8 ] + te[ 9 ] * te[ 9 ] + te[ 10 ] * te[ 10 ]
+
+	return math.Sqrt( math.Max( scaleXSq, math.Max( scaleYSq, scaleZSq ) ) )
+}
+
 func (m *Matrix4) SetPosition(v *Vector3) (*Matrix4) {
 	var te = m.Elements
 
@@ -268,6 +299,82 @@ func (m *Matrix4) SetPosition(v *Vector3) (*Matrix4) {
 	te[ 13 ] = v.Y
 	te[ 14 ] = v.Z
 
+	return m
+}
+
+func (m *Matrix4) MakeTranslation(x, y, z float64) (*Matrix4) {
+	m.Set(
+		1, 0, 0, x,
+		0, 1, 0, y,
+		0, 0, 1, z,
+		0, 0, 0, 1,
+	)
+	return m
+}
+
+func (m *Matrix4) MakeRotationX(theta float64) (*Matrix4) {
+	c := math.Cos(theta)
+	s := math.Sin(theta)
+	m.Set(
+		1, 0,  0, 0,
+		0, c, - s, 0,
+		0, s,  c, 0,
+		0, 0,  0, 1,
+	)
+
+	return m
+}
+
+func (m *Matrix4) MakeRotationY(theta float64) (*Matrix4) {
+	c := math.Cos(theta)
+	s := math.Sin(theta)
+	m.Set(
+		 c, 0, s, 0,
+		 0, 1, 0, 0,
+		- s, 0, c, 0,
+		 0, 0, 0, 1,
+	)
+	return m
+}
+
+func (m *Matrix4) MakeRotationZ(theta float64) (*Matrix4) {
+	c := math.Cos(theta)
+	s := math.Sin(theta)
+	m.Set(
+		c, - s, 0, 0,
+		s,  c, 0, 0,
+		0,  0, 1, 0,
+		0,  0, 0, 1,
+	)
+	return m
+}
+
+func (m *Matrix4) MakeRotationAxis(axis *Vector3, angle float64) (*Matrix4) {
+	// Based on http://www.gamedev.net/reference/articles/article1199.asp
+	c := math.Cos(angle)
+	s := math.Sin(angle)
+	t := 1 - c
+	x := axis.X
+	y := axis.Y
+	z := axis.Z
+	tx := t * x
+	ty := t * y
+	m.Set(
+		tx * x + c, tx * y - s * z, tx * z + s * y, 0,
+		tx * y + s * z, ty * y + c, ty * z - s * x, 0,
+		tx * z - s * y, ty * z + s * x, t * z * z + c, 0,
+		0, 0, 0, 1,
+	)
+	return m
+}
+
+func (m *Matrix4) MakeScale(x, y, z float64) (*Matrix4) {
+	m.Set(
+		x, 0, 0, 0,
+		0, y, 0, 0,
+		0, 0, z, 0,
+		0, 0, 0, 1,
+	)
 	return m
 }
 
@@ -335,6 +442,34 @@ func (m *Matrix4) buildDecompose() (func(*Vector3, *Quaternion, *Vector3) (*Matr
 
 		return m
 	}
+}
+
+func (m *Matrix4) MakeFrustum( left, right, bottom, top, near, far float64) (*Matrix4) {
+	te := m.Elements
+	x := 2 * near / ( right - left )
+	y := 2 * near / ( top - bottom )
+
+	a := ( right + left ) / ( right - left )
+	b := ( top + bottom ) / ( top - bottom )
+	c := - ( far + near ) / ( far - near )
+	d := - 2 * far * near / ( far - near )
+
+	te[ 0 ] = x;	te[ 4 ] = 0;	te[ 8 ] = a;	te[ 12 ] = 0
+	te[ 1 ] = 0;	te[ 5 ] = y;	te[ 9 ] = b;	te[ 13 ] = 0
+	te[ 2 ] = 0;	te[ 6 ] = 0;	te[ 10 ] = c;	te[ 14 ] = d
+	te[ 3 ] = 0;	te[ 7 ] = 0;	te[ 11 ] = - 1;	te[ 15 ] = 0
+
+	return m
+}
+
+func (m *Matrix4) MakePerspective( fov, aspect, near, far float64) {
+
+	ymax := near * math.Tan( DegToRad( fov * 0.5 ) )
+	ymin := - ymax
+	xmin := ymin * aspect
+	xmax := ymax * aspect
+
+	return m.MakeFrustum( xmin, xmax, ymin, ymax, near, far )
 }
 
 func (m *Matrix4) Determinant() float64 {
