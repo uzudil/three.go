@@ -4,6 +4,9 @@ import (
 	three "github.com/uzudil/three.go"
 	"github.com/uzudil/three.go/cameras"
 	"github.com/uzudil/three.go/scenes"
+	"github.com/uzudil/three.go/extras/geometries"
+	"github.com/uzudil/three.go/materials"
+	"github.com/uzudil/three.go/objects"
 )
 
 var camera cameras.Camera
@@ -22,14 +25,13 @@ func main() {
 
 	scene = scenes.NewScene()
 
-	geometry := three.NewBoxGeometry( 200, 200, 200 )
-	material := three.NewMeshBasicMaterial( { map: texture } )
-	mesh = three.NewMesh( geometry, material )
-	scene.add( mesh )
+	geometry := geometries.NewDefaultBoxGeometry( 200, 200, 200 )
+	material := materials.NewMeshBasicMaterial(map[string]interface{}{ "color": 0xffffff })
+
+	mesh = objects.NewMesh( geometry, material )
+	scene.Add( mesh )
 
 	renderer = three.NewGLRenderer()
-	// renderer.setPixelRatio( window.devicePixelRatio );
-	// renderer.setSize( window.innerWidth, window.innerHeight );
 
 	animate()
 }

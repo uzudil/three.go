@@ -1,5 +1,8 @@
 package core
-import math3d "github.com/uzudil/three.go/math"
+import (
+	math3d "github.com/uzudil/three.go/math"
+	"github.com/uzudil/three.go/objects"
+)
 
 type Geometry struct {
 	*EventDispatcher
@@ -10,7 +13,7 @@ type Geometry struct {
 	Vertices []*math3d.Vector3
 	Colors []*math3d.Color
 	Faces []*Face3
-	FaceVertexUvs []([]*math3d.Vector2)
+	FaceVertexUvs []([]([]*math3d.Vector2))
 	BoundingBox *math3d.Box3
 	BoundingSphere *math3d.Sphere
 	VerticesNeedUpdate bool
@@ -40,7 +43,7 @@ func NewGeometry() (*Geometry) {
 		Vertices: make([]*math3d.Vector3, 0),
 		Colors: make([]*math3d.Color, 0),
 		Faces: make([]*Face3, 0),
-		FaceVertexUvs: make([]*math3d.Vector2, 0),
+		FaceVertexUvs: make([]([]([]*math3d.Vector2)), 0),
 	}
 	g.RotateX = g.buildRotateX()
 	g.RotateY = g.buildRotateY()
@@ -571,97 +574,60 @@ func (g *Geometry) Merge(geometry *Geometry, matrix *math3d.Matrix4, materialInd
 	}
 
 	// faces
+	for _, face := range faces2 {
 
-	for ( i = 0, il = faces2.length; i < il; i ++ ) {
+		faceVertexNormals := face.VertexNormals
+		faceVertexColors := face.VertexColors
 
-		var face = faces2[ i ], faceCopy, normal, color,
-		faceVertexNormals = face.vertexNormals,
-		faceVertexColors = face.vertexColors;
+		faceCopy := NewDefaultFace3( face.A + vertexOffset, face.B + vertexOffset, face.C + vertexOffset )
+		faceCopy.Normal.Copy( face.Normal )
 
-		faceCopy = new THREE.Face3( face.a + vertexOffset, face.b + vertexOffset, face.c + vertexOffset );
-		faceCopy.normal.copy( face.normal );
-
-		if ( normalMatrix !== undefined ) {
-
-			faceCopy.normal.applyMatrix3( normalMatrix ).normalize();
-
+		if normalMatrix != nil {
+			faceCopy.Normal.ApplyMatrix3( normalMatrix ).Normalize()
 		}
 
-		for ( var j = 0, jl = faceVertexNormals.length; j < jl; j ++ ) {
-
-			normal = faceVertexNormals[ j ].clone();
-
-			if ( normalMatrix !== undefined ) {
-
-				normal.applyMatrix3( normalMatrix ).normalize();
-
+		for _, fn := range faceVertexNormals {
+			normal := fn.Clone()
+			if normalMatrix != nil {
+				normal.ApplyMatrix3( normalMatrix ).Normalize()
 			}
-
-			faceCopy.vertexNormals.push( normal );
-
+			faceCopy.VertexNormals = append(faceCopy.VertexNormals, normal )
 		}
 
-		faceCopy.color.copy( face.color );
-
-		for ( var j = 0, jl = faceVertexColors.length; j < jl; j ++ ) {
-
-			color = faceVertexColors[ j ];
-			faceCopy.vertexColors.push( color.clone() );
-
+		faceCopy.Color.Copy( face.Color )
+		for _, color := range faceVertexColors {
+			faceCopy.VertexColors = append(faceCopy.VertexColors, color.Clone() )
 		}
 
-		faceCopy.materialIndex = face.materialIndex + materialIndexOffset;
-
-		faces1.push( faceCopy );
-
+		faceCopy.MaterialIndex = face.MaterialIndex + materialIndexOffset
+		faces1 = append(faces1, faceCopy )
 	}
 
 	// uvs
-
-	for ( i = 0, il = uvs2.length; i < il; i ++ ) {
-
-		var uv = uvs2[ i ], uvCopy = [];
-
-		if ( uv === undefined ) {
-
+	for _, uv := range uvs2 {
+		if uv == nil {
 			continue;
-
 		}
-
-		for ( var j = 0, jl = uv.length; j < jl; j ++ ) {
-
-			uvCopy.push( uv[ j ].clone() );
-
+		uvCopy := make([]*math3d.Vector2, len(uv))
+		for _, u := range uv {
+			uvCopy = append(uvCopy, u.Clone())
 		}
-
-		uvs1.push( uvCopy );
-
+		uvs1 = append(uvs1, uvCopy)
 	}
+}
 
-},
-
-mergeMesh: function ( mesh ) {
-
-	if ( mesh instanceof THREE.Mesh === false ) {
-
-		console.error( 'THREE.Geometry.mergeMesh(): mesh not an instance of THREE.Mesh.', mesh );
-		return;
-
-	}
-
-	mesh.matrixAutoUpdate && mesh.updateMatrix();
-
-	g.merge( mesh.geometry, mesh.matrix );
-
-},
+func (g *Geometry) MergeMesh(mesh *objects.Mesh) {
+	mesh.MatrixAutoUpdate && mesh.UpdateMatrix()
+	g.Merge( mesh.Geometry, mesh.Matrix, 0 )
+}
 
 /*
  * Checks for duplicate vertices with hashmap.
  * Duplicated vertices are removed
  * and faces' vertices are updated.
  */
-
-mergeVertices: function () {
+/*
+func (g *Geometry) MergeVertices() int {
 
 	var verticesMap = {}; // Hashmap for looking up vertices by position coordinates (and making sure they are unique)
 	var unique = [], changes = [];
@@ -985,69 +951,42 @@ toJSON: function () {
 	return data;
 
 },
+*/
+func (g *Geometry) Clone() (*Geometry) {
+	return NewGeometry().Copy(g)
+}
 
-clone: function () {
+func (g *Geometry) Copy(source *Geometry) (*Geometry) {
+	g.Vertices = make([]*math3d.Vector3, len(source.Vertices))
+	g.Faces = make([]*Face3, len(source.Faces))
+	g.FaceVertexUvs = make([]([]*math3d.Vector2), 0)
 
-	return new g.constructor().copy( this );
+	vertices := source.Vertices
 
-},
-
-copy: function ( source ) {
-
-	g.vertices = [];
-	g.faces = [];
-	g.faceVertexUvs = [ [] ];
-
-	var vertices = source.vertices;
-
-	for ( var i = 0, il = vertices.length; i < il; i ++ ) {
-
-		g.vertices.push( vertices[ i ].clone() );
-
+	for _, v := range vertices {
+		g.Vertices = append(g.Vertices, v)
 	}
 
-	var faces = source.faces;
-
-	for ( var i = 0, il = faces.length; i < il; i ++ ) {
-
-		g.faces.push( faces[ i ].clone() );
-
+	faces := source.Faces;
+	for _, face := range faces {
+		g.Faces = append(g.Faces, face)
 	}
 
-	for ( var i = 0, il = source.faceVertexUvs.length; i < il; i ++ ) {
-
-		var faceVertexUvs = source.faceVertexUvs[ i ];
-
-		if ( g.faceVertexUvs[ i ] === undefined ) {
-
-			g.faceVertexUvs[ i ] = [];
-
+	for i, faceVertexUvs := range source.FaceVertexUvs {
+		if g.FaceVertexUvs[ i ] == nil {
+			g.FaceVertexUvs[ i ] = make([]([]*math3d.Vector2), 0)
 		}
-
-		for ( var j = 0, jl = faceVertexUvs.length; j < jl; j ++ ) {
-
-			var uvs = faceVertexUvs[ j ], uvsCopy = [];
-
-			for ( var k = 0, kl = uvs.length; k < kl; k ++ ) {
-
-				var uv = uvs[ k ];
-
-				uvsCopy.push( uv.clone() );
-
+		for _, uvs := range faceVertexUvs {
+			uvsCopy := make([]*math3d.Vector2, 0);
+			for _, uv := range uvs {
+				uvsCopy = append(uvsCopy, uv.Clone() )
 			}
-
-			g.faceVertexUvs[ i ].push( uvsCopy );
-
+			g.FaceVertexUvs[ i ] = append(g.FaceVertexUvs[i], uvsCopy)
 		}
-
 	}
+	return g
+}
 
-	return this;
-
-},
-
-dispose: function () {
-
-	g.dispatchEvent( { type: 'dispose' } );
-
+func (g *Geometry) Dispose() {
+	g.DispatchEvent(NewEvent("dispose"))
 }
