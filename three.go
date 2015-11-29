@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+var REVISION float64 = 1.0
 
 // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent.button
 

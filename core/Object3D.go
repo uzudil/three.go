@@ -29,6 +29,7 @@ type Object3D struct {
 	UserData map[string]string
 	ModelViewMatrix *math.Matrix4
 	NormalMatrix *math.Matrix3
+	Geometry *Geometry
 
 	GetWorldQuaternion func(*math.Vector3) (*math.Quaternion)
 	GetWorldRotation func(*math.Euler) (*math.Euler)
@@ -70,6 +71,7 @@ func NewObject3D() (*Object3D) {
 		UserData: make(map[string]string),
 		ModelViewMatrix: math.NewMatrix4(),
 		NormalMatrix: *math.NewMatrix3(),
+		Geometry: nil,
 	}
 
 	onRotationChange := func() {

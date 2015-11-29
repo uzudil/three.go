@@ -7,7 +7,6 @@ import (
 
 type Mesh struct {
 	*core.Object3D
-	Geometry *core.Geometry
 	Material *materials.Material
 }
 
@@ -16,9 +15,10 @@ func NewDefaultMesh() (*Mesh) {
 }
 
 func NewMesh(geometry *core.Geometry, material *materials.Material) (*Mesh) {
+	o := core.NewObject3D()
+	o.Geometry = geometry
 	m := &Mesh{
-		core.NewObject3D(),
-		Geometry: geometry,
+		o,
 		Material: material,
 	}
 	// m.UpdateMorphTargets()

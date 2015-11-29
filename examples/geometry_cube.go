@@ -1,23 +1,30 @@
 package main
 
 import (
-	three "github.com/uzudil/three.go"
 	"github.com/uzudil/three.go/cameras"
 	"github.com/uzudil/three.go/scenes"
 	"github.com/uzudil/three.go/extras/geometries"
 	"github.com/uzudil/three.go/materials"
 	"github.com/uzudil/three.go/objects"
+	"runtime"
+	"github.com/uzudil/three.go/renderers"
 )
 
 var camera cameras.Camera
 var scene scenes.Scene
-var mesh three.Mesh
-var renderer three.Renderer
+var mesh objects.Mesh
+var renderer renderers.WebGLRenderer
 
 const (
 	WIDTH = 800
 	HEIGHT = 600
 )
+
+func init() {
+	// This is needed to arrange that main() runs on main thread.
+	// See documentation for functions that are only allowed to be called from the main thread.
+	runtime.LockOSThread()
+}
 
 func main() {
 	camera = cameras.NewPerspectiveCamera( 70.0, float64(WIDTH / HEIGHT), 1.0, 1000.0 )
@@ -31,7 +38,10 @@ func main() {
 	mesh = objects.NewMesh( geometry, material )
 	scene.Add( mesh )
 
-	renderer = three.NewGLRenderer()
+	renderer = renderers.NewWebGLRenderer(map[string]interface{}{
+		"width": WIDTH,
+		"height": HEIGHT,
+	})
 
 	animate()
 }
